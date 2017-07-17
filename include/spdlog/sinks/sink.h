@@ -35,7 +35,8 @@ private:
 
 inline bool sink::should_log(level::level_enum msg_level) const
 {
-    return msg_level >= _level.load(std::memory_order_relaxed);
+    // Audit messages should *always* be logged
+    return msg_level == level::level_enum::audit || msg_level >= _level.load(std::memory_order_relaxed);
 }
 
 inline void sink::set_level(level::level_enum log_level)

@@ -78,15 +78,16 @@ typedef enum
     warn = 3,
     err = 4,
     critical = 5,
-    off = 6
+    off = 6,
+    audit = 7
 } level_enum;
 
 #if !defined(SPDLOG_LEVEL_NAMES)
-#define SPDLOG_LEVEL_NAMES { "trace", "debug", "info",  "warning", "error", "critical", "off" };
+#define SPDLOG_LEVEL_NAMES { "trace", "debug", "info",  "warning", "error", "critical", "off", "audit" };
 #endif
 static const char* level_names[] SPDLOG_LEVEL_NAMES
 
-static const char* short_level_names[] { "T", "D", "I", "W", "E", "C", "O" };
+static const char* short_level_names[] { "T", "D", "I", "W", "E", "C", "O", "A" };
 
 inline const char* to_str(spdlog::level::level_enum l)
 {

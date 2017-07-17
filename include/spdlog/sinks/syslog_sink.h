@@ -40,6 +40,7 @@ public:
         _priorities[static_cast<int>(level::err)] = LOG_ERR;
         _priorities[static_cast<int>(level::critical)] = LOG_CRIT;
         _priorities[static_cast<int>(level::off)] = LOG_INFO;
+        _priorities[static_cast<int>(level::audit)] = LOG_NOTICE;
 
         //set ident to be program name if empty
         ::openlog(_ident.empty()? nullptr:_ident.c_str(), syslog_option, syslog_facility);

@@ -158,6 +158,12 @@ inline void spdlog::logger::critical(const char* fmt, const Arg1 &arg1, const Ar
     log(level::critical, fmt, arg1, args...);
 }
 
+template <typename Arg1, typename... Args>
+inline void spdlog::logger::audit(const char* fmt, const Arg1 &arg1, const Args&... args)
+{
+    log(level::audit, fmt, arg1, args...);
+}
+
 template <typename... Args>
 inline void spdlog::logger::log_if(const bool flag, level::level_enum lvl, const char* msg)
 {
@@ -230,6 +236,15 @@ inline void spdlog::logger::critical_if(const bool flag, const char* fmt, const 
     }
 }
 
+template <typename Arg1, typename... Args>
+inline void spdlog::logger::audit_if(const bool flag, const char* fmt, const Arg1 &arg1, const Args&... args)
+{
+    if (flag)
+    {
+        log(level::audit, fmt, arg1, args...);
+    }
+}
+
 
 template<typename T>
 inline void spdlog::logger::trace(const T& msg)
@@ -267,6 +282,12 @@ template<typename T>
 inline void spdlog::logger::critical(const T& msg)
 {
     log(level::critical, msg);
+}
+
+template<typename T>
+inline void spdlog::logger::audit(const T& msg)
+{
+    log(level::audit, msg);
 }
 
 template<typename T>
@@ -320,6 +341,15 @@ inline void spdlog::logger::critical_if(const bool flag, const T& msg)
     if (flag)
     {
         log(level::critical, msg);
+    }
+}
+
+template<typename T>
+inline void spdlog::logger::audit_if(const bool flag, const T& msg)
+{
+    if (flag)
+    {
+        log(level::audit, msg);
     }
 }
 
@@ -379,6 +409,12 @@ template <typename... Args>
 inline void spdlog::logger::critical(const wchar_t* fmt, const Args&... args)
 {
     log(level::critical, fmt, args...);
+}
+
+template <typename... Args>
+inline void spdlog::logger::audit(const wchar_t* fmt, const Args&... args)
+{
+    log(level::audit, fmt, args...);
 }
 
 //
@@ -455,6 +491,15 @@ inline void spdlog::logger::critical_if(const bool flag, const wchar_t* fmt, con
     if (flag)
     {
         log(level::critical, fmt, args...);
+    }
+}
+
+template <typename... Args>
+inline void spdlog::logger::audit_if(const bool flag, const wchar_t* fmt, const Args&... args)
+{
+    if (flag)
+    {
+        log(level::audit, fmt, args...);
     }
 }
 
