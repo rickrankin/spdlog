@@ -17,11 +17,33 @@
 #include <mutex>
 #include <string>
 #include <cerrno>
+#include <utility>
+
+namespace
+{
+
+using split_result = std::pair<std::string, std::string>;
+inline split_result split_filename(const std::string& filename)
+{
+    // We only want to consider the name portion of the filename, i.e., dots in
+    // directory name components are ignored.
+    std::string::size_type lastSlash = filename.find_last_of("/\\");
+    if (lastSlash == std::string::npos)
+        lastSlash = 0;
+
+    std::string::size_type lastDot = filename.find_last_of(".");
+    if (lastDot == std::string::npos || lastDot < lastSlash)
+        return split_result(filename, ""); // filename contains no extension
+    return split_result(filename.substr(0, lastDot), filename.substr(lastDot+1));
+}
+
+}
 
 namespace spdlog
 {
 namespace sinks
 {
+
 /*
  * Trivial file sink with single file as target
  */
@@ -66,14 +88,16 @@ class rotating_file_sink SPDLOG_FINAL : public base_sink < Mutex >
 {
 public:
     rotating_file_sink(const filename_t &base_filename,
-                       std::size_t max_size, std::size_t max_files) :
+                       std::size_t max_size, std::size_t max_files,
+                       const filename_t &index_format = "{}") :
         _base_filename(base_filename),
         _max_size(max_size),
         _max_files(max_files),
+        _index_format(index_format),
         _current_size(0),
         _file_helper()
     {
-        _file_helper.open(calc_filename(_base_filename, 0));
+        _file_helper.open(calc_filename(_base_filename, 0, _index_format));
         _current_size = _file_helper.size(); //expensive. called only once
     }
 
@@ -96,11 +120,18 @@ protected:
     }
 
 private:
-    static filename_t calc_filename(const filename_t& filename, std::size_t index)
+    static filename_t calc_filename(const filename_t& filename, std::size_t index,
+                                    const filename_t& index_format)
     {
         std::conditional<std::is_same<filename_t::value_type, char>::value, fmt::MemoryWriter, fmt::WMemoryWriter>::type w;
         if (index)
-            w.write(SPDLOG_FILENAME_T("{}.{}"), filename, index);
+        {
+            auto parts = split_filename(filename);
+            filename_t pattern = SPDLOG_FILENAME_T("{}.") + index_format;
+            if (!parts.second.empty())
+                pattern += SPDLOG_FILENAME_T(".{}");
+            w.write(pattern, parts.first, index, parts.second);
+        }
         else
             w.write(SPDLOG_FILENAME_T("{}"), filename);
         return w.str();
@@ -118,8 +149,8 @@ private:
         _file_helper.close();
         for (auto i = _max_files; i > 0; --i)
         {
-            filename_t src = calc_filename(_base_filename, i - 1);
-            filename_t target = calc_filename(_base_filename, i);
+            filename_t src = calc_filename(_base_filename, i - 1, _index_format);
+            filename_t target = calc_filename(_base_filename, i, _index_format);
 
             if (details::file_helper::file_exists(target))
             {
@@ -138,6 +169,7 @@ private:
     filename_t _base_filename;
     std::size_t _max_size;
     std::size_t _max_files;
+    std::string _index_format;
     std::size_t _current_size;
     details::file_helper _file_helper;
 };
@@ -154,8 +186,16 @@ struct default_daily_file_name_calculator
     static filename_t calc_filename(const filename_t& basename)
     {
         std::tm tm = spdlog::details::os::localtime();
+
+        auto parts = split_filename(basename);
+        filename_t pattern = SPDLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}_{:02d}-{:02d}");
+        if (!parts.second.empty())
+            pattern += SPDLOG_FILENAME_T(".{}");
+
         std::conditional<std::is_same<filename_t::value_type, char>::value, fmt::MemoryWriter, fmt::WMemoryWriter>::type w;
-        w.write(SPDLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}_{:02d}-{:02d}"), basename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
+        w.write(pattern, parts.first, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                tm.tm_hour, tm.tm_min, parts.second);
+
         return w.str();
     }
 };
@@ -169,8 +209,15 @@ struct dateonly_daily_file_name_calculator
     static filename_t calc_filename(const filename_t& basename)
     {
         std::tm tm = spdlog::details::os::localtime();
+
+        auto parts = split_filename(basename);
+        filename_t pattern = SPDLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}");
+        if (!parts.second.empty())
+            pattern += SPDLOG_FILENAME_T(".{}");
+
         std::conditional<std::is_same<filename_t::value_type, char>::value, fmt::MemoryWriter, fmt::WMemoryWriter>::type w;
-        w.write(SPDLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}"), basename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        w.write(pattern, parts.first, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, parts.second);
+
         return w.str();
     }
 };

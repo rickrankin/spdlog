@@ -79,7 +79,7 @@ typedef enum
     err = 4,
     critical = 5,
     off = 6,
-    audit = 7
+    audit = 7       // Audit messages cannot be disabled, so it's greater than 'off'
 } level_enum;
 
 #if !defined(SPDLOG_LEVEL_NAMES)
